@@ -1,0 +1,1 @@
+# Telegram_idea_critical_generator
