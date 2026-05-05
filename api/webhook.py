@@ -37,12 +37,20 @@ async def _process(data: dict):
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(length))
-        asyncio.run(_process(body))
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"ok")
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length))
+            asyncio.run(_process(body))
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"ok")
+        except Exception:
+            import traceback
+            err = traceback.format_exc().encode()
+            logging.error(err)
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(err)
 
     def do_GET(self):
         self.send_response(200)
