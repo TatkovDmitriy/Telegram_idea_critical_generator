@@ -16,23 +16,16 @@ from bot_handlers import register_handlers
 
 logging.basicConfig(level=logging.INFO)
 
-_bot: Bot = None
-_dp: Dispatcher = None
-
-
-def _get_app():
-    global _bot, _dp
-    if _bot is None:
-        _bot = Bot(token=TELEGRAM_BOT_TOKEN)
-        _dp = Dispatcher(storage=FirestoreStorage())
-        register_handlers(_dp, _bot)
-    return _bot, _dp
-
 
 async def _process(data: dict):
-    bot, dp = _get_app()
-    update = Update.model_validate(data)
-    await dp.feed_update(bot, update)
+    bot = Bot(token=TELEGRAM_BOT_TOKEN)
+    dp = Dispatcher(storage=FirestoreStorage())
+    register_handlers(dp, bot)
+    try:
+        update = Update.model_validate(data)
+        await dp.feed_update(bot, update)
+    finally:
+        await bot.session.close()
 
 
 class handler(BaseHTTPRequestHandler):
