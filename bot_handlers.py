@@ -15,7 +15,8 @@ from services.transcription import transcribe_audio
 from services.ai_service import get_challenge_response, parse_rice_block
 from services.obsidian_publisher import publish_to_obsidian
 
-os.makedirs("temp_audio", exist_ok=True)
+TEMP_DIR = "/tmp/temp_audio" if os.path.exists("/tmp") else "temp_audio"
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 
 class IdeaFlow(StatesGroup):
@@ -62,7 +63,7 @@ def register_handlers(dp: Dispatcher, bot: Bot):
 
 async def _download_voice(bot: Bot, message: Message) -> str:
     file = await bot.get_file(message.voice.file_id)
-    file_path = f"temp_audio/{message.voice.file_id}.ogg"
+    file_path = f"{TEMP_DIR}/{message.voice.file_id}.ogg"
     url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file.file_path}"
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
