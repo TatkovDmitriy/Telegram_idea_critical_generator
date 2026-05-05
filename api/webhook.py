@@ -1,0 +1,53 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import json
+import asyncio
+import logging
+from http.server import BaseHTTPRequestHandler
+
+from aiogram import Bot, Dispatcher
+from aiogram.types import Update
+
+from config import TELEGRAM_BOT_TOKEN
+from services.firestore_storage import FirestoreStorage
+from bot_handlers import register_handlers
+
+logging.basicConfig(level=logging.INFO)
+
+_bot: Bot = None
+_dp: Dispatcher = None
+
+
+def _get_app():
+    global _bot, _dp
+    if _bot is None:
+        _bot = Bot(token=TELEGRAM_BOT_TOKEN)
+        _dp = Dispatcher(storage=FirestoreStorage())
+        register_handlers(_dp, _bot)
+    return _bot, _dp
+
+
+async def _process(data: dict):
+    bot, dp = _get_app()
+    update = Update.model_validate(data)
+    await dp.feed_update(bot, update)
+
+
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length))
+        asyncio.run(_process(body))
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"ok")
+
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is alive")
+
+    def log_message(self, format, *args):
+        pass
